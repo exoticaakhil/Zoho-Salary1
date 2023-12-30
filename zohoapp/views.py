@@ -27023,8 +27023,9 @@ from django.utils.decorators import method_decorator
 @method_decorator(login_required)
 def add_salary_details(request):
    if request.user.is_authenticated:
-    if request.method == 'POST':
+        if request.method == 'POST':
             # Get form data
+            usr=request.user
             name = request.POST['ex_name']
             mail = request.POST['ex_mail']
             employeeid = request.POST['ex_id']
@@ -27048,7 +27049,7 @@ def add_salary_details(request):
             discription = request.POST['ex_discription']
 
             # Create an instance of the model
-            saldel = salary_deatils(
+            saldel = salary_deatils(user=usr,
                 employee_name=name,
                 employee_mail=mail,
                 employee_id=employeeid,
@@ -27186,16 +27187,10 @@ def monthselection(request):
             year, month = map(int, month_year.split('-'))
             
             event_duration = (event.end_date - event.start_date).days + 1 if event.end_date else 1
-
-            
-            
-            # If the selected month matches the event's month_name, get the number of days
-
-            # If the month_year is not in the dictionary, add it with a count of 1
             if month_year not in event_counts:
                 event_counts[month_year] = event_duration
             else:
-                # If the month_year is already in the dictionary, increment the count
+
                 event_counts[month_year] += event_duration
         for key, value in event_counts.items():
                 year, month = map(int, key.split('-'))
@@ -27225,15 +27220,58 @@ def monthselection(request):
             #     hol = 0
 
         print(f"Selected month ({r}) days: {day}")
-        # context = {
-        #     "events": all_events,
-        #     "event_counts_json": formatted_event_counts,
-        #     "company": company,
-        #     "day":day
-        # }
-
-        # Return the selected_month_days along with other data in the JsonResponse
         return JsonResponse({"day":day,"hol":hol})
+# def monthselection(request):
+#     if request.method == 'POST':
+#         if 'month' in request.session:
+#             uid = request.session.get('month')
+#         else:
+#             return JsonResponse({'error': 'Session UID not found'}, status=401)
+
+#         try:
+#             comp = company_details.objects.get(id=uid)
+#         except company_details.DoesNotExist:
+#             return JsonResponse({'error': 'Company not found'}, status=404)
+
+#         employee_id = request.POST.get('id')
+#         empid = Payroll.objects.get(employeeid=employee_id)
+#         month = request.POST.get('month')
+#         year = request.POST.get('year')
+#         month = int(month)
+#         year = int(year)
+#         try:
+#             result = salary_deatils.objects.get(employee=empid, month=month, year=year)
+#             if result:
+#                 return JsonResponse({'error': 'Salary Already Executed.'}, status=404)
+#         except salary_deatils.DoesNotExist:
+#             start_date = datetime(year, month, 1)
+#             if month == 12:
+#                 end_date = datetime(year + 1, 1, 1) - timedelta(days=1)
+#             else:
+#                 end_date = datetime(year, month % 12 + 1, 1) - timedelta(days=1)
+#             start_date = start_date.strftime("%Y-%m-%d")
+#             end_date = end_date.strftime("%Y-%m-%d")
+#             leave_count = attendance.objects.filter(
+#                 employeeid=empid,
+#                 cid=comp,
+#                 date__range=(start_date, end_date),
+#                 status='absent'
+#             ).count()
+#             holidays_count = Events.objects.filter(start_date__range=(start_date, end_date)).count()
+#             print(holidays_count,leave_count)
+#             _, num_days = calendar.monthrange(year, month)
+#             working_days = num_days - holidays_count
+#             try:
+#                 return JsonResponse({
+#                     'holiday': holidays_count,
+#                     'leave': leave_count,   
+#                     'working_days' : working_days,         
+#                 }, safe=False)
+
+#             except Payroll.DoesNotExist:
+#                 return JsonResponse({'error': 'Selected employee not found.'}, status=404)
+
+    # return JsonResponse({'error': 'Invalid request method'}, status=400)
 def edit_salary(request,id):
     user = request.user
     company = company_details.objects.get(user=user)
